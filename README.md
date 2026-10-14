@@ -1,36 +1,38 @@
 # AlquilaYa API
 
-API REST para gestionar una empresa de alquiler de vehículos. Permite crear,
-consultar, actualizar y eliminar clientes, oficinas, vehículos, alquileres e
-historiales de mantenimiento. Calcula automáticamente el precio del alquiler
-y controla reservas coincidentes y disponibilidad. Los endpoints son públicos;
-el entregable no implementa login.
+Este proyecto es una API para una empresa de alquiler de vehículos llamada
+AlquilaYa. Se pueden registrar clientes, oficinas, vehículos, alquileres y
+mantenimientos, además de consultar, editar y borrar sus datos.
 
-## Tecnologías
+El precio del alquiler se calcula automáticamente. También se revisa que el
+vehículo no esté en mantenimiento ni tenga otra reserva en las mismas fechas.
+No tiene login.
+
+## Qué se usó
 
 - Java 21 y Spring Boot 4.1.1.
-- Spring Web MVC y JSON.
-- Spring Data JPA / Hibernate y MySQL Connector/J.
-- MySQL (verificado con 8.0.46).
-- Jakarta Bean Validation y manejo de errores con `ProblemDetail`.
-- Maven Wrapper y JUnit 5. Python 3 para las pruebas HTTP opcionales.
+- Spring Web para las peticiones.
+- Spring Data JPA para trabajar con la base de datos.
+- MySQL y su driver.
+- Bean Validation para validar los datos.
+- Maven y JUnit para compilar y hacer pruebas.
+- Python 3 para el script que prueba los endpoints.
 
-El código se organiza en `models`, `repositories`, `services`, `controllers`,
-`dto`, `exceptions` y `config`. Los controladores reciben DTOs validados y
-delegan la lógica a servicios transaccionales; los repositorios acceden a MySQL.
+Las clases están separadas en modelos, repositorios, servicios y controladores.
+También hay carpetas para los datos de las peticiones, los errores y la configuración.
 
-## Instalación y ejecución
+## Cómo ejecutarlo
 
-1. Instalar JDK 21 y MySQL y arrancar el servicio de MySQL.
-2. Abrir una terminal en la carpeta que contiene `pom.xml` y `mvnw.cmd`.
-3. Crear la base de datos desde MySQL Workbench o el cliente MySQL:
+1. Tener instalado Java 21 y MySQL. MySQL debe estar encendido.
+2. Abrir una terminal en la carpeta donde están `pom.xml` y `mvnw.cmd`.
+3. Crear la base de datos en MySQL Workbench o en la consola de MySQL:
 
 ```sql
 CREATE DATABASE IF NOT EXISTS alquilaya CHARACTER SET utf8mb4;
 ```
 
-4. Configurar las variables en la misma terminal PowerShell. Sustituir los
-marcadores por los valores locales; no guardarlos en archivos para entregar:
+4. Poner estas variables en PowerShell, cambiando lo que está entre `< >`
+por los datos de tu equipo:
 
 ```powershell
 $env:JAVA_HOME = '<ruta del JDK 21>'
@@ -39,32 +41,32 @@ $env:DB_USERNAME = '<usuario MySQL>'
 $env:DB_PASSWORD = '<contraseña MySQL>'
 ```
 
-5. Ejecutar la API:
+5. Ejecutar este comando:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-También se puede generar y ejecutar el JAR:
+Otra forma de ejecutarlo es generar el JAR:
 
 ```powershell
 .\mvnw.cmd -DskipTests package
 & "$env:JAVA_HOME\bin\java.exe" -jar target\alquilaya-0.0.1-SNAPSHOT.jar
 ```
 
-En Linux/macOS, usar `export` para las variables y `./mvnw` para Maven.
-El primer uso del wrapper requiere Internet para descargar dependencias.
-Hibernate crea o actualiza las tablas (`ddl-auto=update`); la base debe existir
-y el usuario debe tener permisos para modificar su esquema.
+En Linux o macOS se usa `export` para las variables y `./mvnw` para Maven.
+La primera vez se necesita Internet para descargar las dependencias.
+Las tablas se crean o actualizan al iniciar, pero primero hay que crear la
+base de datos y dar permisos al usuario de MySQL.
 
-La URL base es `http://localhost:8080/api`. Una comprobación inicial es:
+La API queda en `http://localhost:8080/api`. Para ver si está funcionando:
 
 ```powershell
 curl.exe http://localhost:8080/api/oficinas
 ```
 
-Una base vacía devuelve `200 OK` con `[]`. Un error de acceso a MySQL requiere
-revisar el servicio, la URL, las credenciales y los permisos de ese usuario.
+Si no hay oficinas registradas, devuelve `[]` con código `200`.
+Si falla la conexión a MySQL, revisar el usuario, la contraseña y que el servicio esté encendido.
 
 ## Variables de entorno
 
@@ -76,16 +78,17 @@ revisar el servicio, la URL, las credenciales y los permisos de ese usuario.
 | `DB_PASSWORD` | Sí | Contraseña MySQL, sin valor fijo en el código |
 | `SERVER_PORT` | Opcional | Puerto HTTP; por defecto `8080` |
 
-No se carga `.env` automáticamente. Configurar las variables en la terminal o
-en la configuración privada del IDE. La creación automática de usuarios está
-desactivada por defecto y no se necesita para la API. El código auxiliar solo
-la activa si `SEED_USERS_ENABLED=true`; en ese caso requiere `ADMIN_EMAIL`,
-`ADMIN_PASSWORD`, `OPERADOR_EMAIL` y `OPERADOR_PASSWORD` locales. No proporciona
-un endpoint de login.
+Las variables se ponen en la terminal o en el IDE; el proyecto no lee `.env`
+automáticamente. No se deben subir las contraseñas.
+
+Quedó código auxiliar para crear usuarios, pero está apagado y no hace falta
+para usar la API. Solo se activa con `SEED_USERS_ENABLED=true` y las variables
+`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `OPERADOR_EMAIL` y `OPERADOR_PASSWORD`.
+Esto no agrega un login.
 
 ## Endpoints
 
-Todas las rutas siguientes incluyen el prefijo `/api` y usan JSON.
+Todas estas rutas empiezan con `/api` y trabajan con JSON.
 
 | Recurso | Listar | Consultar | Crear | Actualizar | Eliminar |
 | --- | --- | --- | --- | --- | --- |
@@ -95,15 +98,15 @@ Todas las rutas siguientes incluyen el prefijo `/api` y usan JSON.
 | Alquileres | `GET /alquileres` | `GET /alquileres/{id}` | `POST /alquileres` | `PUT /alquileres/{id}` | `DELETE /alquileres/{id}` |
 | Mantenimientos | `GET /mantenimientos` | `GET /mantenimientos/{id}` | `POST /mantenimientos` | `PUT /mantenimientos/{id}` | `DELETE /mantenimientos/{id}` |
 
-`POST` devuelve `201 Created` y `Location`; `GET` y `PUT`, `200 OK`;
-`DELETE`, `204 No Content` sin cuerpo. `PUT` requiere todos los campos de la
-solicitud, igual que `POST`; el identificador se toma de la ruta.
+Al crear se devuelve `201` con la dirección del registro en `Location`.
+Al consultar o editar se devuelve `200`, y al borrar `204` sin contenido.
+Para editar con `PUT` hay que mandar todos los campos, igual que al crear.
 
-## Ejemplos de peticiones y respuestas
+## Ejemplos
 
-Enviar `Content-Type: application/json` en `POST` y `PUT`. Los identificadores
-siguientes son ilustrativos: usar los devueltos por la API. Crear primero una
-oficina y un cliente; después un vehículo y sus alquileres/mantenimientos.
+Se pueden probar en Postman usando `Content-Type: application/json`.
+Primero hay que crear una oficina y un cliente, luego un vehículo.
+Los IDs de los ejemplos son de muestra; hay que usar los que devuelva la API.
 
 ### Oficina
 
@@ -204,7 +207,7 @@ un periodo ocupado o eliminar un recurso con referencias devuelve `409`:
 {"type":"about:blank","title":"Conflict","status":409,"detail":"El vehículo tiene un alquiler en ese periodo","instance":"/api/alquileres"}
 ```
 
-## Validaciones y reglas de negocio
+## Algunas validaciones
 
 - Campos obligatorios, IDs positivos, email y teléfono válidos.
 - Placa, email y licencia únicos. Las relaciones deben apuntar a registros existentes.
@@ -214,7 +217,7 @@ un periodo ocupado o eliminar un recurso con referencias devuelve `409`:
 - Los alquileres pendientes y activos impiden reservas solapadas; los completados no bloquean periodos.
 - Vehículos en mantenimiento no admiten nuevos alquileres pendientes o activos.
 - Solo un alquiler activo por vehículo. Activar, completar, eliminar o cambiar el vehículo del contrato sincroniza su estado, respetando mantenimiento.
-- Bloqueos transaccionales protegen las reservas simultáneas.
+- Si llegan dos reservas a la vez para el mismo periodo, solo se acepta una.
 
 Estados de vehículo: `DISPONIBLE`, `ALQUILADO`, `MANTENIMIENTO`.
 Estados de alquiler: `PENDIENTE`, `ACTIVO`, `COMPLETADO`.
@@ -223,9 +226,9 @@ del vehículo; ese estado se modifica mediante `PUT /api/vehiculos/{id}`.
 
 ## Pruebas
 
-Para las pruebas, crear una base separada `alquilaya_pruebas` y cambiar `DB_URL`
-a `jdbc:mysql://localhost:3306/alquilaya_pruebas`. Con las credenciales locales
-configuradas, ejecutar las pruebas Java:
+Para probar sin tocar otros datos, crear la base `alquilaya_pruebas` y cambiar
+`DB_URL` a `jdbc:mysql://localhost:3306/alquilaya_pruebas`.
+Las pruebas de Java se ejecutan con:
 
 ```powershell
 .\mvnw.cmd test
@@ -237,20 +240,18 @@ Para las pruebas HTTP, arrancar la API en esa base y ejecutar:
 python tests\crud_mysql.py http://localhost:8080 reporte-crud.json
 ```
 
-El script crea sus propios registros, prueba los cinco CRUD, errores,
-duplicados, concurrencia y estados, y elimina los registros creados al terminar.
-No ejecutarlo contra datos reales. La verificación realizada con MySQL 8.0.46
-obtuvo 175 comprobaciones HTTP y 3 pruebas Java aprobadas.
+El script crea datos para probar y los borra al terminar. Revisa los cinco CRUD,
+datos inválidos, duplicados y alquileres. Usarlo solo en la base de pruebas.
+Se probó con MySQL 8.0.46: pasaron 175 comprobaciones HTTP y 3 pruebas Java.
 
-## Archivos del entregable
+## Qué incluir en la entrega
 
-Incluir `src/`, `tests/`, `pom.xml`, `mvnw`, `mvnw.cmd`, `.mvn/wrapper/`,
+Dejar `src/`, `tests/`, `pom.xml`, `mvnw`, `mvnw.cmd`, `.mvn/wrapper/`,
 `.gitignore`, `.gitattributes`, este README y `API.md`.
 
-Excluir `target/`, archivos del IDE, `.env`, configuración local, logs,
-reportes generados, cachés Python y volcados de base de datos. `.gitignore`
-contiene esas exclusiones; al crear un ZIP hay que respetarlas manualmente.
-No incluir contraseñas reales, tokens ni archivos con datos de usuarios.
-El proyecto no contiene credenciales fijas en `application.properties`.
+No incluir `target/`, archivos del IDE, `.env`, configuración local, logs,
+reportes de pruebas, cachés Python ni copias de la base de datos.
+Estos archivos están en `.gitignore`, pero si se hace un ZIP hay que quitarlos
+de la copia que se va a entregar. Tampoco incluir contraseñas reales o tokens.
 
-Para más detalles de las solicitudes y las reglas, consultar [API.md](API.md).
+Hay más ejemplos y detalles en [API.md](API.md).
