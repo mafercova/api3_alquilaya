@@ -1,9 +1,3 @@
-"""Pruebas HTTP contra una instancia conectada a MySQL de pruebas.
-
-Ejemplo: python tests/crud_mysql.py http://localhost:18081 reporte.json
-Usar exclusivamente una base aislada: crea registros y los elimina al terminar.
-No requiere paquetes externos ni login.
-"""
 import concurrent.futures
 import json
 import sys
@@ -120,7 +114,6 @@ try:
     call('no borrar oficina referenciada','DELETE','/oficinas/'+str(oid),expected=409)
     call('no borrar cliente referenciado','DELETE','/clientes/'+str(cid),expected=409)
 finally:
-    # Eliminar solamente los registros creados por esta ejecución, en orden de FK.
     for resource in ['/alquileres','/mantenimientos','/vehiculos','/clientes','/oficinas']:
         for path, identifier in reversed(created):
             if path == resource:

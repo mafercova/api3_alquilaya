@@ -58,13 +58,11 @@ public class AlquilerService {
     public AlquilerModel actualizar(Long id, AlquilerModel datos) {
         AlquilerModel alquiler = buscarParaActualizar(id);
         VehiculoModel anterior = alquiler.getVehiculo();
-        // Orden estable de bloqueos cuando el contrato cambia de vehículo.
         Long nuevoId = datos.getVehiculo() == null ? null : datos.getVehiculo().getId();
         if (nuevoId != null && nuevoId < anterior.getId()) {
             resolverVehiculo(datos.getVehiculo());
         }
         anterior = resolverVehiculo(anterior);
-        // Validar antes de modificar la entidad administrada por JPA.
         datos.setId(id);
         datos.setVehiculo(resolverVehiculo(datos.getVehiculo()));
         datos.setCliente(resolverCliente(datos.getCliente()));
@@ -140,7 +138,6 @@ public class AlquilerService {
                     vehiculo.getId(), EstadoAlquilerModel.ACTIVO, excluirId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El vehículo ya tiene un alquiler activo");
         }
-        // Un estado ALQUILADO sin contrato activo también impide una nueva activación.
         if (alquiler.getEstado() == EstadoAlquilerModel.ACTIVO
                 && vehiculo.getEstado() == EstadoVehiculoModel.ALQUILADO
                 && !alquilerRepository.existsByVehiculoIdAndEstado(vehiculo.getId(), EstadoAlquilerModel.ACTIVO)) {
